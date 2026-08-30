@@ -13,6 +13,7 @@
       <el-button type="primary" :icon="Refresh" :loading="loading" @click="load">刷新</el-button>
       <div class="spacer"></div>
       <el-button type="warning" :icon="AlarmClock" @click="runAnomalyCheck">孤立森林异常检测</el-button>
+      <el-button type="danger" :icon="Connection" @click="runClosedLoop">一键闭环演练</el-button>
     </div>
 
     <el-table :data="items" v-loading="loading" stripe border>
@@ -49,8 +50,8 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Refresh, AlarmClock, Tickets, Check } from '@element-plus/icons-vue'
-import { listAlerts, handleAlert, createWorkOrder, anomalyCheck } from '../api'
+import { Refresh, AlarmClock, Connection, Tickets, Check } from '@element-plus/icons-vue'
+import { listAlerts, handleAlert, createWorkOrder, anomalyCheck, diagnose } from '../api'
 
 const items = ref([])
 const loading = ref(false)
@@ -107,6 +108,41 @@ async function runAnomalyCheck() {
     duration: 6000,
   })
   load()
+}
+
+// 一键闭环演练：异常检测 → 专家诊断 → 自动生成工单
+async function runClosedLoop() {
+  const { ElMessageBox } = await import('element-plus')
+  let target = null
+  try {
+    const { value } = await ElMessageBox.prompt(
+      '输入设备ID，将依次执行：孤立森林异常检测 → 随机森林评估 → 专家诊断 → 自动生成工单',
+      '一键闭环演练',
+      { inputPattern: /^\d+$/, inputErrorMessage: '请输入数字设备ID', inputValue: '1' },
+    )
+    target = Number(value)
+  } catch {
+    return
+  }
+  try {
+    // 环节1：异常检测（异常则自动生成预警）
+    const ano = await anomalyCheck(target)
+    // 环节2-3：专家诊断（严重/警告自动生成工单）
+    const diag = await diagnose(target, { create_order: true })
+    const top = diag.diagnoses?.[0]
+    const lines = [
+      `异常检测：${ano.is_anomaly ? '检出异常（自动生成预警）' : '未检出异常'}`,
+      `专家诊断：${diag.diagnoses?.length || 0} 条规则命中，健康度 ${diag.health_score}（${diag.health_grade}）`,
+    ]
+    if (top) lines.push(`首要诊断：${top.code} ${top.name}（${top.level}）→ ${top.advice}`)
+    ElMessageBox.alert(lines.join('<br/>'), `设备 #${target} 闭环演练完成`, {
+      dangerouslyUseHTMLString: true,
+      confirmButtonText: '查看预警与工单',
+    })
+    load()
+  } catch {
+    /* 错误已由拦截器提示 */
+  }
 }
 
 function levelType(l) {
