@@ -41,6 +41,12 @@ xiaozhou/
 │   │   └── seed.py             # 数据导入脚本
 │   ├── tests/                  # pytest 测试（43 个用例）
 │   └── requirements.txt
+├── frontend/                   # 前端（阶段4交付，Vue3+Vite）
+│   ├── package.json / vite.config.js
+│   └── src/
+│       ├── main.js / App.vue / router / api
+│       ├── layout/MainLayout.vue   # 主布局（深蓝侧栏导航）
+│       └── views/                  # 六大页面（孪生/台账/监测/评估/预警/工单）
 ├── data/                       # 数据目录（阶段1交付）
 │   ├── README.md               # 数据来源与说明
 │   ├── preprocess.py           # 数据预处理程序
@@ -49,7 +55,9 @@ xiaozhou/
 │   └── processed/              # 预处理后数据文件与参数
 └── prompt/                     # AI 提示词追溯记录（每阶段归档）
     ├── stage1_data_preparation_2026-08-30.json
-    └── stage2_project_init_backend_2026-08-30.json
+    ├── stage2_project_init_backend_2026-08-30.json
+    ├── stage3_algorithm_2026-08-30.json
+    └── stage4_frontend_2026-08-30.json
 ```
 
 ## 三、数据说明（数据准备阶段已完成）
@@ -104,6 +112,27 @@ python -m pytest tests -v              # 运行自动化测试（43 个用例）
 
 算法固化于 `backend/app/model_files/`，运行时不重新训练；`python -m app.algorithms.train` 可一键重训。
 
+### 4.2 前端运行说明（阶段4）
+
+```bash
+cd frontend
+npm install                          # 安装依赖
+npm run dev                          # 启动开发服务器（默认 http://127.0.0.1:5173）
+npm run build                        # 生产构建（输出 dist/）
+```
+
+开发服务器已配置 `/api` 代理到后端 `http://127.0.0.1:8000`，**需先启动后端**再访问前端。
+
+六大页面：
+| 页面 | 路由 | 功能 |
+| --- | --- | --- |
+| 数字孪生可视化 | `/twin` | 车间布局、设备孪生状态、统计概览、一键诊断 |
+| 车间设备台账 | `/equipment` | 设备 CRUD、搜索分页 |
+| 实时数据监测 | `/monitoring` | 多传感器折线、异常红点、最新周期概览 |
+| 健康与能耗评估 | `/evaluation` | 随机森林评估触发、健康度仪表盘、历史记录 |
+| 孪生预警中心 | `/alerts` | 预警筛选、生成工单、标记处理 |
+| 运维工单管理 | `/work-orders` | 工单状态流转（待处理→维修中→已完成）、新建/详情 |
+
 ## 五、开发进度
 
 | 阶段 | 内容 | 状态 |
@@ -111,7 +140,7 @@ python -m pytest tests -v              # 运行自动化测试（43 个用例）
 | 阶段 1 | 数据准备：数据来源 + 预处理 + prompt 追溯 | ✅ 完成（2026-08-30） |
 | 阶段 2 | 项目初始化 + 数据库表结构 + 后端基础接口 + 自动化测试 | ✅ 完成（2026-08-30） |
 | 阶段 3 | 算法模块：随机森林/孤立森林/专家系统规则库 + 服务集成 | ✅ 完成（2026-08-30） |
-| 阶段 4 | 前端孪生大屏与六大页面（Vue3+Element Plus+ECharts） | ⏳ 待开始 |
+| 阶段 4 | 前端孪生大屏与六大页面（Vue3+Element Plus+ECharts） | ✅ 完成（2026-08-30） |
 | 阶段 5 | 预警-诊断-工单闭环联调与整体测试 | ⏳ 待开始 |
 
 ## 六、运行环境
