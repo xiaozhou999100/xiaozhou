@@ -8,23 +8,26 @@ def test_evaluate_healthy_device(client, sample_data):
     body = resp.json()
     assert body["code"] == 0
     data = body["data"]
-    assert data["health_grade"] == "健康"      # DEV001 健康度 90
+    assert "随机森林" in data["detail"]        # 使用机器学习评估
     assert 0 <= data["health_score"] <= 100
     assert 0 <= data["load_rate"] <= 100
-    assert "detail" in data
+    assert 0 <= data["energy_efficiency"] <= 100
+    assert data["health_grade"] in ("健康", "注意", "预警", "严重")
 
 
 def test_evaluate_warning_device(client, sample_data):
     resp = client.post(f"/api/v1/equipment/{sample_data['eq2_id']}/evaluate", json={})
     data = resp.json()["data"]
-    assert data["health_grade"] == "严重"      # DEV002 健康度 10
-    assert data["health_score"] == 10.0
+    assert 0 <= data["health_score"] <= 100
+    assert "随机森林" in data["detail"]
 
 
 def test_evaluate_updates_equipment_grade(client, sample_data):
-    client.post(f"/api/v1/equipment/{sample_data['eq2_id']}/evaluate", json={})
+    eval_resp = client.post(f"/api/v1/equipment/{sample_data['eq2_id']}/evaluate", json={})
+    eval_grade = eval_resp.json()["data"]["health_grade"]
     resp = client.get(f"/api/v1/equipment/{sample_data['eq2_id']}")
-    assert resp.json()["data"]["health_grade"] == "严重"
+    # 设备台账健康等级应与最新评估结果一致
+    assert resp.json()["data"]["health_grade"] == eval_grade
 
 
 def test_list_evaluations(client, sample_data):
