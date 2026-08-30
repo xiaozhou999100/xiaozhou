@@ -1,0 +1,59 @@
+{
+  "stage": 1,
+  "stage_name": "数据准备阶段",
+  "date": "2026-08-30",
+  "course_design": "数字孪生车间智能监控与运维平台",
+  "record_policy": "按阶段归档与AI工具的全部交互，留存prompt原文、AI产出要点与验收结果，上下文压缩前先备份本记录",
+  "sessions": [
+    {
+      "session_no": 1,
+      "time": "2026-08-30",
+      "ai_tool": "豆包电脑端（AI Agent）",
+      "purpose": "确认项目仓库并启动本阶段工作",
+      "user_prompt_original": "https://github.com/xiaozhou999100/xiaozhou.git 这是我的文件已经进入本地电脑可以开始生成了",
+      "ai_output_summary": "定位本地Git环境（GitHub Desktop自带Git 2.53），克隆课程设计仓库至本地，读取选题说明、方案设计、学习笔记，确认课程设计为《数字孪生车间智能监控与运维平台》，明确本阶段为数据准备阶段。",
+      "acceptance": "仓库克隆成功，项目背景文件全部读取，任务范围明确。"
+    },
+    {
+      "session_no": 2,
+      "time": "2026-08-30",
+      "ai_tool": "豆包电脑端（AI Agent）",
+      "purpose": "接收阶段任务要求并制定执行计划",
+      "user_prompt_original": "@所有人 按进度安排今天是数据准备阶段，本周日24：00前完成本阶段任务。本阶段考核内容：数据来源-准备好完成课程设计所需数据。数据量小直接提交到仓库中/data目录下；公开数据集可以给出数据集来源链接（一定要确保链接有效），并在/data目录下写出说明，同时要做在项目readme.md中说明；自建大的数据集要在huggingface或modelscope开源；私有敏感数据不建议用于课程设计。数据预处理-根据项目需要，完成对原始数据的预处理工作，完成相关预处理程序，/data下要更新预处理后的数据文件（或索引）。在项目readme.md中同步更新相关工作。AI工具提示词追溯-创建一个prompt目录，将与AI交流的记录(通常是json文件)添加到这个目录下，并在之后的每个阶段同步更新，注意要在上下文压缩前及时备份prompt记录并添加。现在直接控制我的电脑帮我完成以上任务",
+      "ai_output_summary": "依据学习笔记中锁定的'NASA C-MAPSS FD001'为核心实验数据，制定并执行：①数据来源（下载+官方链接验证）；②数据预处理（编写preprocess.py并产出processed数据）；③prompt追溯（创建prompt目录归档本记录）；④readme.md同步更新。",
+      "acceptance": "四部分任务拆解完成，全部为可直接执行的动作。"
+    },
+    {
+      "session_no": 3,
+      "time": "2026-08-30",
+      "ai_tool": "豆包电脑端（AI Agent）",
+      "purpose": "数据来源：确认并下载C-MAPSS FD001数据集",
+      "user_prompt_original": "（延续阶段要求）数据来源-准备好完成课程设计所需数据，公开数据集给出有效来源链接并在/data写说明",
+      "ai_output_summary": "联网检索确认官方来源：NASA开放数据门户CMAPSS主页(data.nasa.gov/Aerospace/CMAPSS-Jet-Engine-Simulated-Data/ff5v-kuh6)、数据包直链(https://data.nasa.gov/docs/legacy/CMAPSSData.zip)、NASA PCoE仓库。验证直链HTTP 200可下载（12.4MB），下载并解压，仅保留项目核心使用的FD001子集（train/test/RUL）入data/raw/CMAPSS，编写data/README.md数据说明（来源、字段、预处理、使用场景）。",
+      "acceptance": "官方链接全部验证有效；FD001原始数据（3.5MB+2.2MB+429B）入库；data/README.md含有效链接与完整说明。"
+    },
+    {
+      "session_no": 4,
+      "time": "2026-08-30",
+      "ai_tool": "豆包电脑端（AI Agent）",
+      "purpose": "数据预处理：编写并运行预处理程序",
+      "user_prompt_original": "（延续阶段要求）数据预处理-根据项目需要完成原始数据预处理，完成相关预处理程序，/data下更新预处理后的数据文件，readme同步更新",
+      "ai_output_summary": "安装依赖（pandas/numpy/scikit-learn）；按方案设计3.3编写data/preprocess.py：①补充列名；②删除零方差列（剔除sensor_1/5/10/16/18/19与op_setting_3，保留15传感器+2工况）；③构造RUL/健康度评分/四级健康等级/异常标签；④MinMax归一化（训练集拟合，保存scaler_params.json）；⑤导出SQLite(equipment.db)。修复'重复列名unit'bug后运行成功。产出processed目录（训练20,631行/测试13,096行/设备台账100台）与equipment.db（3张表）。",
+      "acceptance": "预处理产物回读验证通过：100台设备、健康等级分布合理、归一化范围0~1、SQLite三表数据完整。"
+    },
+    {
+      "session_no": 5,
+      "time": "2026-08-30",
+      "ai_tool": "豆包电脑端（AI Agent）",
+      "purpose": "AI工具提示词追溯：创建prompt目录并归档",
+      "user_prompt_original": "（延续阶段要求）AI工具提示词追溯-创建一个prompt目录，将与AI交流的记录(通常是json文件)添加到这个目录下，并在之后的每个阶段同步更新",
+      "ai_output_summary": "创建prompt/目录，编写prompt/README.md（归档规范+阶段列表），编写stage1_data_preparation_2026-08-30.json，忠实记录本阶段5轮核心AI交互（prompt原文+产出+验收）。",
+      "acceptance": "prompt/README.md与本json记录落盘，后续阶段按同一规范追加。"
+    }
+  ],
+  "next_steps": [
+    "阶段2：项目初始化与数据库表结构设计（读取PROJECT_RULES.md规范文件后开发）",
+    "上下文压缩/长对话前：先备份本prompt记录并追加新记录",
+    "本阶段完成后执行Git小步提交并推送远程仓库"
+  ]
+}
