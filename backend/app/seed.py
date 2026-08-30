@@ -28,9 +28,10 @@ from app.models import Alert, Equipment, SensorData, WorkOrder
 
 
 def _grade_of(score: float) -> str:
-    if score >= 75:
+    # 阈值按 FD001 数据实际健康度区间(约17~50)重校准，保证四级等级均可达
+    if score >= 45:
         return "健康"
-    if score >= 50:
+    if score >= 35:
         return "注意"
     if score >= 25:
         return "预警"
@@ -45,8 +46,13 @@ def seed_equipment(db) -> dict[int, int]:
     for _, row in profile.iterrows():
         unit = int(row["device_id"])
         avg_score = float(row["avg_health_score"])
-        init_state = str(row["init_state"])
-        twin_status = {"运行": "运行", "关注": "待机", "报警": "报警"}.get(init_state, "运行")
+        # 由平均健康度推导孪生状态，形成 运行/待机/报警 混合分布（更贴近真实车间）
+        if avg_score >= 40:
+            twin_status = "运行"
+        elif avg_score >= 30:
+            twin_status = "待机"
+        else:
+            twin_status = "报警"
 
         equipment = Equipment(
             device_code=f"DEV{unit:03d}",

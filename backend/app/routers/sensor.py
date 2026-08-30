@@ -41,11 +41,12 @@ def get_sensor_data(
     rows = list(reversed(rows))  # 时间正序返回
 
     if normalized:
-        # 仅返回图表所需归一化字段
+        # 仅返回图表所需归一化字段（含 RUL/健康度，供概览面板展示）
         items = []
         for r in rows:
             item = {
                 "cycle": r.cycle,
+                "rul": r.rul,
                 "health_score": r.health_score,
                 "health_grade": r.health_grade,
                 "anomaly_label": r.anomaly_label,
