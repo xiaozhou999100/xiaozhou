@@ -1,0 +1,74 @@
+{
+  "stage": 2,
+  "stage_name": "项目初始化与后端基础接口",
+  "date": "2026-08-30",
+  "course_design": "数字孪生车间智能监控与运维平台",
+  "record_policy": "按阶段归档与AI工具的全部交互，留存prompt原文、AI产出要点与验收结果，上下文压缩前先备份本记录",
+  "sessions": [
+    {
+      "session_no": 1,
+      "time": "2026-08-30",
+      "ai_tool": "豆包电脑端（AI Agent）",
+      "purpose": "确认开始阶段2并制定执行计划",
+      "user_prompt_original": "开始",
+      "ai_output_summary": "承接阶段1成果，依据学习笔记'下一阶段核心推进方向'与PROJECT_RULES.md规则，制定阶段2计划：项目初始化+数据库表结构+后端基础接口+自动化测试，按小步提交推进。",
+      "acceptance": "任务拆解明确，开始执行。"
+    },
+    {
+      "session_no": 2,
+      "time": "2026-08-30",
+      "ai_tool": "豆包电脑端（AI Agent）",
+      "purpose": "创建项目核心规则文件 PROJECT_RULES.md",
+      "user_prompt_original": "（延续学习笔记要求）第一时间创建项目核心规则文件PROJECT_RULES.md，明确技术栈、目录结构、代码规范、命名规则、接口返回格式、测试标准",
+      "ai_output_summary": "编写PROJECT_RULES.md：锁定技术栈(FastAPI+Vue3+SQLite)、目录结构规范、命名规则、统一接口返回格式{code,message,data}、五张表设计约定、代码规范、pytest测试标准、Git小步提交规范、过程留痕要求。",
+      "acceptance": "PROJECT_RULES.md落盘，作为后续所有开发的总规则文件。"
+    },
+    {
+      "session_no": 3,
+      "time": "2026-08-30",
+      "ai_tool": "豆包电脑端（AI Agent）",
+      "purpose": "初始化后端项目并设计数据库表结构",
+      "user_prompt_original": "（阶段2目标）完成项目初始化搭建，基于规范文件搭建统一的项目目录结构；落地数据库表结构设计与后端基础接口开发",
+      "ai_output_summary": "安装fastapi/uvicorn/sqlalchemy/pytest/httpx依赖；搭建backend/项目结构(app/{config,database,models,schemas,routers,services,seed})；设计并实现5张ORM表：equipment(设备台账)、sensor_data(传感器时序)、health_evaluation(评估)、alert(预警)、work_order(工单)，含外键与级联。",
+      "acceptance": "数据库表结构落地，与PROJECT_RULES.md第5节一致。"
+    },
+    {
+      "session_no": 4,
+      "time": "2026-08-30",
+      "ai_tool": "豆包电脑端（AI Agent）",
+      "purpose": "实现后端基础接口（5大业务模块）",
+      "user_prompt_original": "（阶段2目标）后端基础接口：设备台账增删改查、传感器数据查询、健康评估、预警、工单，接口返回格式统一",
+      "ai_output_summary": "实现设备台账CRUD(/api/v1/equipment)、传感器时序查询(/api/v1/equipment/{id}/sensor-data，支持归一化与异常标红)、健康评估(/evaluate触发评估)、预警中心(/api/v1/alerts创建/筛选/标记处理)、运维工单(/api/v1/work-orders创建/状态流转)；业务逻辑放services/health.py。",
+      "acceptance": "5个路由模块实现，统一返回{code,message,data}格式。"
+    },
+    {
+      "session_no": 5,
+      "time": "2026-08-30",
+      "ai_tool": "豆包电脑端（AI Agent）",
+      "purpose": "编写数据导入脚本并导入预处理数据",
+      "user_prompt_original": "（阶段2目标）将预处理数据导入SQLite供孪生实时读取",
+      "ai_output_summary": "编写app/seed.py：重建数据表、由device_profile.csv生成100台设备台账、导入train_FD001_processed.csv共20631条传感器时序、生成4条演示预警与4条工单验证闭环。运行成功。",
+      "acceptance": "生产库equipment.db数据完备：100台设备/20631条传感器/4预警/4工单。"
+    },
+    {
+      "session_no": 6,
+      "time": "2026-08-30",
+      "ai_tool": "豆包电脑端（AI Agent）",
+      "purpose": "编写并运行pytest自动化测试",
+      "user_prompt_original": "（阶段2目标）完成自动化测试用例编写；修改代码必跑测试",
+      "ai_output_summary": "编写tests/（conftest+4个测试文件共30用例），使用内存SQLite独立测试库不污染生产数据。修复3个bug：health_evaluation.py缺String导入、evaluation.py缺Field导入、conftest关闭会话后访问id导致DetachedInstanceError；将install_date改为可空。最终30个测试全部通过。",
+      "acceptance": "30 passed。另做uvicorn真实启动冒烟测试：健康检查与设备接口正常。"
+    }
+  ],
+  "acceptance_summary": {
+    "tests": "30/30 通过",
+    "smoke": "uvicorn 启动成功，/api/v1/health 与设备接口正常",
+    "data": "生产库 100 台设备 / 20631 条传感器 / 4 预警 / 4 工单",
+    "git": "阶段2提交待完成（小步提交：规则文件→后端初始化→表结构→接口→测试）"
+  },
+  "next_steps": [
+    "阶段3：算法模块——随机森林健康评估/RUL预测、孤立森林异常检测、专家系统规则库（20条左右IF-THEN）",
+    "阶段4：前端Vue3+Element Plus+ECharts孪生大屏与六大页面",
+    "上下文压缩前：备份本prompt记录并追加新记录"
+  ]
+}

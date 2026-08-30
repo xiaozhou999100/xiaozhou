@@ -25,15 +25,29 @@ xiaozhou/
 ├── 选题说明                    # 选题与目标说明
 ├── 方案设计                    # 系统设计方案
 ├── 学习笔记.md                 # 学习计划与进度记录
+├── PROJECT_RULES.md            # 项目核心规则文件（总规则，开发必读）
 ├── readme.md                   # 本文件
-├── data/                       # 数据目录（本阶段交付）
+├── backend/                    # 后端（阶段2交付）
+│   ├── app/
+│   │   ├── main.py             # FastAPI 入口（挂载路由/建表/CORS）
+│   │   ├── config.py           # 配置（路径/分页/枚举）
+│   │   ├── database.py         # SQLAlchemy 引擎/会话
+│   │   ├── models/             # ORM 模型（equipment/sensor_data/health_evaluation/alert/work_order）
+│   │   ├── schemas/            # Pydantic 请求/响应模型
+│   │   ├── routers/            # 路由（设备台账/传感器/评估/预警/工单）
+│   │   ├── services/           # 业务逻辑（健康评估等）
+│   │   └── seed.py             # 数据导入脚本
+│   ├── tests/                  # pytest 测试（30 个用例）
+│   └── requirements.txt
+├── data/                       # 数据目录（阶段1交付）
 │   ├── README.md               # 数据来源与说明
 │   ├── preprocess.py           # 数据预处理程序
-│   ├── equipment.db            # SQLite 数据库（可再生成）
+│   ├── equipment.db            # SQLite 数据库（由 seed.py 生成）
 │   ├── raw/CMAPSS/             # 官方原始数据（FD001 核心子集）
 │   └── processed/              # 预处理后数据文件与参数
 └── prompt/                     # AI 提示词追溯记录（每阶段归档）
-    └── stage1_data_preparation_2026-08-30.json
+    ├── stage1_data_preparation_2026-08-30.json
+    └── stage2_project_init_backend_2026-08-30.json
 ```
 
 ## 三、数据说明（数据准备阶段已完成）
@@ -61,25 +75,39 @@ RUL/健康度/健康等级/异常标签构造、MinMax 归一化、SQLite 导出
 ### 3.3 AI 工具提示词追溯
 
 AI 交互记录按阶段归档至 `/prompt/` 目录（JSON 格式），每阶段同步更新。
-本阶段记录：`prompt/stage1_data_preparation_2026-08-30.json`。
+本阶段记录：`prompt/stage1_data_preparation_2026-08-30.json`、`prompt/stage2_project_init_backend_2026-08-30.json`。
 
-## 四、开发进度
+## 四、后端运行说明（阶段2交付）
+
+```bash
+cd backend
+pip install -r requirements.txt        # 安装依赖
+python -m app.seed                     # 导入预处理数据生成 equipment.db（可重复执行）
+python -m uvicorn app.main:app --host 127.0.0.1 --port 8000   # 启动服务
+python -m pytest tests -v              # 运行自动化测试（30 个用例）
+```
+
+服务启动后访问 `http://127.0.0.1:8000/docs` 查看 Swagger 接口文档。
+接口统一返回 `{"code": 0, "message": "success", "data": ...}`，前缀 `/api/v1`，覆盖：
+设备台账 CRUD、传感器时序查询（支持归一化/异常标红）、健康评估、预警中心、运维工单（预警→工单闭环）。
+
+## 五、开发进度
 
 | 阶段 | 内容 | 状态 |
 | --- | --- | --- |
 | 阶段 1 | 数据准备：数据来源 + 预处理 + prompt 追溯 | ✅ 完成（2026-08-30） |
-| 阶段 2 | 项目初始化、数据库表结构、后端基础接口 | ⏳ 待开始 |
-| 阶段 3 | 机器学习 / 数据挖掘 / 专家系统算法模块 | ⏳ 待开始 |
-| 阶段 4 | 前端孪生大屏与六大页面 | ⏳ 待开始 |
-| 阶段 5 | 预警-诊断-工单闭环联调与自动化测试 | ⏳ 待开始 |
+| 阶段 2 | 项目初始化 + 数据库表结构 + 后端基础接口 + 自动化测试 | ✅ 完成（2026-08-30） |
+| 阶段 3 | 算法模块：随机森林/孤立森林/专家系统规则库 | ⏳ 待开始 |
+| 阶段 4 | 前端孪生大屏与六大页面（Vue3+Element Plus+ECharts） | ⏳ 待开始 |
+| 阶段 5 | 预警-诊断-工单闭环联调与整体测试 | ⏳ 待开始 |
 
-## 五、运行环境
+## 六、运行环境
 
 - Python 3.10+（本机 3.13）
 - Node.js LTS（前端，阶段 4 引入）
 - 全部本机运行，无云端、无硬件依赖
 
-## 六、参考文献
+## 七、参考文献
 
 [1] 数字孪生与智能制造 [M]. 电子工业出版社.
 [2] 工业互联网平台技术 [M]. 机械工业出版社.
