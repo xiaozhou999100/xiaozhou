@@ -27,17 +27,19 @@ xiaozhou/
 ├── 学习笔记.md                 # 学习计划与进度记录
 ├── PROJECT_RULES.md            # 项目核心规则文件（总规则，开发必读）
 ├── readme.md                   # 本文件
-├── backend/                    # 后端（阶段2交付）
+├── backend/                    # 后端（阶段2/3交付）
 │   ├── app/
 │   │   ├── main.py             # FastAPI 入口（挂载路由/建表/CORS）
 │   │   ├── config.py           # 配置（路径/分页/枚举）
 │   │   ├── database.py         # SQLAlchemy 引擎/会话
 │   │   ├── models/             # ORM 模型（equipment/sensor_data/health_evaluation/alert/work_order）
 │   │   ├── schemas/            # Pydantic 请求/响应模型
-│   │   ├── routers/            # 路由（设备台账/传感器/评估/预警/工单）
-│   │   ├── services/           # 业务逻辑（健康评估等）
+│   │   ├── routers/            # 路由（设备/传感器/评估/预警/工单/算法）
+│   │   ├── services/           # 业务逻辑（健康评估/异常检测/专家诊断）
+│   │   ├── algorithms/         # 算法模块（特征工程/随机森林/孤立森林/专家系统/训练脚本）
+│   │   ├── model_files/        # 固化模型（random_forest_rul.joblib / isolation_forest.pkl）
 │   │   └── seed.py             # 数据导入脚本
-│   ├── tests/                  # pytest 测试（30 个用例）
+│   ├── tests/                  # pytest 测试（43 个用例）
 │   └── requirements.txt
 ├── data/                       # 数据目录（阶段1交付）
 │   ├── README.md               # 数据来源与说明
@@ -77,19 +79,30 @@ RUL/健康度/健康等级/异常标签构造、MinMax 归一化、SQLite 导出
 AI 交互记录按阶段归档至 `/prompt/` 目录（JSON 格式），每阶段同步更新。
 本阶段记录：`prompt/stage1_data_preparation_2026-08-30.json`、`prompt/stage2_project_init_backend_2026-08-30.json`。
 
-## 四、后端运行说明（阶段2交付）
+## 四、后端运行说明（阶段2/3交付）
 
 ```bash
 cd backend
 pip install -r requirements.txt        # 安装依赖
 python -m app.seed                     # 导入预处理数据生成 equipment.db（可重复执行）
+python -m app.algorithms.train         # 训练并固化模型（随机森林/孤立森林，可重复执行）
 python -m uvicorn app.main:app --host 127.0.0.1 --port 8000   # 启动服务
-python -m pytest tests -v              # 运行自动化测试（30 个用例）
+python -m pytest tests -v              # 运行自动化测试（43 个用例）
 ```
 
 服务启动后访问 `http://127.0.0.1:8000/docs` 查看 Swagger 接口文档。
 接口统一返回 `{"code": 0, "message": "success", "data": ...}`，前缀 `/api/v1`，覆盖：
-设备台账 CRUD、传感器时序查询（支持归一化/异常标红）、健康评估、预警中心、运维工单（预警→工单闭环）。
+设备台账 CRUD、传感器时序查询、健康评估（随机森林）、异常检测（孤立森林）、专家诊断、预警、运维工单（预警→诊断→工单闭环）。
+
+### 4.1 算法模块说明（阶段3）
+
+| 算法 | 方法 | 指标 |
+| --- | --- | --- |
+| 健康度/RUL 预测 | 随机森林回归（30 周期窗口统计特征 62 维） | 测试集 MAE 13.55 cycles，R² 0.53 |
+| 异常检测 | 孤立森林（健康早期 50% 样本建基线） | 精确率 0.43，召回率 0.26 |
+| 故障诊断 | 专家系统 IF-THEN 规则库（20 条，R001~R020） | 输出故障部位/排查步骤/维修建议 |
+
+算法固化于 `backend/app/model_files/`，运行时不重新训练；`python -m app.algorithms.train` 可一键重训。
 
 ## 五、开发进度
 
@@ -97,7 +110,7 @@ python -m pytest tests -v              # 运行自动化测试（30 个用例）
 | --- | --- | --- |
 | 阶段 1 | 数据准备：数据来源 + 预处理 + prompt 追溯 | ✅ 完成（2026-08-30） |
 | 阶段 2 | 项目初始化 + 数据库表结构 + 后端基础接口 + 自动化测试 | ✅ 完成（2026-08-30） |
-| 阶段 3 | 算法模块：随机森林/孤立森林/专家系统规则库 | ⏳ 待开始 |
+| 阶段 3 | 算法模块：随机森林/孤立森林/专家系统规则库 + 服务集成 | ✅ 完成（2026-08-30） |
 | 阶段 4 | 前端孪生大屏与六大页面（Vue3+Element Plus+ECharts） | ⏳ 待开始 |
 | 阶段 5 | 预警-诊断-工单闭环联调与整体测试 | ⏳ 待开始 |
 

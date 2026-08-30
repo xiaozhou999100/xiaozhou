@@ -1,0 +1,73 @@
+{
+  "stage": 3,
+  "stage_name": "算法模块（机器学习/数据挖掘/专家系统）",
+  "date": "2026-08-30",
+  "course_design": "数字孪生车间智能监控与运维平台",
+  "record_policy": "按阶段归档与AI工具的全部交互，留存prompt原文、AI产出要点与验收结果，上下文压缩前先备份本记录",
+  "sessions": [
+    {
+      "session_no": 1,
+      "time": "2026-08-30",
+      "ai_tool": "豆包电脑端（AI Agent）",
+      "purpose": "确认开始阶段3算法模块",
+      "user_prompt_original": "开始",
+      "ai_output_summary": "依据学习笔记'搭建随机森林、孤立森林基础模型；完善专家系统规则库'与方案设计3.5，制定阶段3计划：特征工程→随机森林RUL预测→孤立森林异常检测→专家系统规则库→训练固化→服务集成→测试。",
+      "acceptance": "计划明确，开始执行。"
+    },
+    {
+      "session_no": 2,
+      "time": "2026-08-30",
+      "ai_tool": "豆包电脑端（AI Agent）",
+      "purpose": "编写特征工程与随机森林/孤立森林模块",
+      "user_prompt_original": "（阶段3目标）搭建随机森林RUL预测与孤立森林异常检测基础模型，特征基于传感器时序统计",
+      "ai_output_summary": "编写features.py（30周期滑动窗口统计特征：均值/标准差/最小/最大+工况，共62维）；random_forest.py（随机森林回归预测RUL并映射健康度）；isolation_forest.py（孤立森林异常检测）。",
+      "acceptance": "算法模块骨架完成。"
+    },
+    {
+      "session_no": 3,
+      "time": "2026-08-30",
+      "ai_tool": "豆包电脑端（AI Agent）",
+      "purpose": "实现专家系统IF-THEN规则库",
+      "user_prompt_original": "（阶段3目标）完善专家系统规则库（20条左右IF-THEN），结合异常点位+评估结果给出故障部位、排查步骤、运维建议",
+      "ai_output_summary": "编写expert_system.py：20条IF-THEN规则（R001~R020），覆盖健康度风险、HPT/LPT/压气机/冷却/转速/燃油等多部件故障，每条含级别/故障部位/排查步骤/维修建议，并实现按严重度排序的诊断引擎。",
+      "acceptance": "规则库20条，诊断引擎可解释。"
+    },
+    {
+      "session_no": 4,
+      "time": "2026-08-30",
+      "ai_tool": "豆包电脑端（AI Agent）",
+      "purpose": "训练并固化模型，解决模型体积问题",
+      "user_prompt_original": "（阶段3目标）模型提前训练固化，系统运行仅调用模型",
+      "ai_output_summary": "训练随机森林（MAE 13.66→13.55, R² 0.53）与孤立森林。发现随机森林pickle达137MB超GitHub限制，改用joblib压缩+控制树规模（min_samples_leaf/split），压缩至10.5MB。孤立森林初期与健康标签吻合差，改为'仅用健康早期50%样本建立基线'方案后精度0.43/召回0.26，并修复退化期标签方向bug。",
+      "acceptance": "模型文件12.2MB（joblib 10.5MB+pkl 1.7MB），指标可解释，可提交仓库。"
+    },
+    {
+      "session_no": 5,
+      "time": "2026-08-30",
+      "ai_tool": "豆包电脑端（AI Agent）",
+      "purpose": "算法集成到后端服务与接口",
+      "user_prompt_original": "（阶段3目标）系统运行仅调用模型，评估/预警/诊断闭环接入",
+      "ai_output_summary": "新增services/anomaly.py（孤立森林运行时检测+自动预警）、services/diagnosis.py（专家诊断+严重/警告自动生成工单）、升级services/health.py（随机森林评估）；新增routers/algorithms.py（/anomaly-check、/diagnose接口）。端到端冒烟测试通过。",
+      "acceptance": "算法闭环打通：评估→异常检测→专家诊断→工单。"
+    },
+    {
+      "session_no": 6,
+      "time": "2026-08-30",
+      "ai_tool": "豆包电脑端（AI Agent）",
+      "purpose": "编写算法测试并修正",
+      "user_prompt_original": "（阶段3目标）修改代码必跑测试",
+      "ai_output_summary": "新增test_expert_system.py（规则库结构与触发逻辑）、test_algorithms_api.py（异常检测/诊断/工单生成接口）。修正：不存在设备返回404、评估接口断言更新为随机森林口径。最终43个测试全部通过。",
+      "acceptance": "43 passed（原30+新增13）。"
+    }
+  ],
+  "acceptance_summary": {
+    "models": "随机森林 MAE 13.55 cycles / R² 0.53；孤立森林 精确率 0.43 / 召回 0.26（健康基线方案）；专家系统 20 条规则",
+    "tests": "43/43 通过",
+    "smoke": "评估/异常检测/诊断/工单闭环端到端通过",
+    "git": "阶段3提交待完成（小步提交）"
+  },
+  "next_steps": [
+    "阶段4：前端Vue3+Element Plus+ECharts孪生大屏与六大页面（台账/孪生/监测/评估/预警/工单）",
+    "上下文压缩前：备份本prompt记录并追加新记录"
+  ]
+}
