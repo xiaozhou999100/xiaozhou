@@ -39,7 +39,7 @@ xiaozhou/
 │   │   ├── algorithms/         # 算法模块（特征工程/随机森林/孤立森林/专家系统/训练脚本）
 │   │   ├── model_files/        # 固化模型（random_forest_rul.joblib / isolation_forest.pkl）
 │   │   └── seed.py             # 数据导入脚本
-│   ├── tests/                  # pytest 测试（43 个用例）
+│   ├── tests/                  # pytest 测试（48 个用例，含闭环集成测试）
 │   └── requirements.txt
 ├── frontend/                   # 前端（阶段4交付，Vue3+Vite）
 │   ├── package.json / vite.config.js
@@ -57,7 +57,8 @@ xiaozhou/
     ├── stage1_data_preparation_2026-08-30.json
     ├── stage2_project_init_backend_2026-08-30.json
     ├── stage3_algorithm_2026-08-30.json
-    └── stage4_frontend_2026-08-30.json
+    ├── stage4_frontend_2026-08-30.json
+    └── stage5_closed_loop_testing_2026-08-30.json
 ```
 
 ## 三、数据说明（数据准备阶段已完成）
@@ -95,7 +96,7 @@ pip install -r requirements.txt        # 安装依赖
 python -m app.seed                     # 导入预处理数据生成 equipment.db（可重复执行）
 python -m app.algorithms.train         # 训练并固化模型（随机森林/孤立森林，可重复执行）
 python -m uvicorn app.main:app --host 127.0.0.1 --port 8000   # 启动服务
-python -m pytest tests -v              # 运行自动化测试（43 个用例）
+python -m pytest tests -v              # 运行自动化测试（48 个用例）
 ```
 
 服务启动后访问 `http://127.0.0.1:8000/docs` 查看 Swagger 接口文档。
@@ -130,8 +131,21 @@ npm run build                        # 生产构建（输出 dist/）
 | 车间设备台账 | `/equipment` | 设备 CRUD、搜索分页 |
 | 实时数据监测 | `/monitoring` | 多传感器折线、异常红点、最新周期概览 |
 | 健康与能耗评估 | `/evaluation` | 随机森林评估触发、健康度仪表盘、历史记录 |
-| 孪生预警中心 | `/alerts` | 预警筛选、生成工单、标记处理 |
+| 孪生预警中心 | `/alerts` | 预警筛选、生成工单、标记处理、一键闭环演练 |
 | 运维工单管理 | `/work-orders` | 工单状态流转（待处理→维修中→已完成）、新建/详情 |
+
+### 4.3 业务闭环与整体测试（阶段5）
+
+**业务闭环**（核心价值，已端到端打通）：
+```
+设备监测 → 孤立森林异常检测 → 风险预警 → 专家系统诊断 → 运维工单生成 → 工单状态流转 → 闭环
+```
+
+**整体测试**：
+- 后端自动化测试 **48 个用例全部通过**（43 个基础/算法 + 5 个闭环集成测试）
+- 闭环集成测试覆盖：异常检测→预警、诊断→工单、工单状态流转、预警一键生成工单并标记处理、全链路闭环
+- 前端提供「一键闭环演练」按钮（预警中心页），输入设备 ID 即可一键演示完整闭环
+- 已在真实运行的前后端环境中用浏览器完整演示闭环（DEV001 末端寿命设备：检出异常→预警→诊断命中 R001 严重→自动生成工单→状态流转至已完成）
 
 ## 五、开发进度
 
@@ -141,7 +155,7 @@ npm run build                        # 生产构建（输出 dist/）
 | 阶段 2 | 项目初始化 + 数据库表结构 + 后端基础接口 + 自动化测试 | ✅ 完成（2026-08-30） |
 | 阶段 3 | 算法模块：随机森林/孤立森林/专家系统规则库 + 服务集成 | ✅ 完成（2026-08-30） |
 | 阶段 4 | 前端孪生大屏与六大页面（Vue3+Element Plus+ECharts） | ✅ 完成（2026-08-30） |
-| 阶段 5 | 预警-诊断-工单闭环联调与整体测试 | ⏳ 待开始 |
+| 阶段 5 | 预警-诊断-工单闭环联调与整体测试 | ✅ 完成（2026-08-30） |
 
 ## 六、运行环境
 
