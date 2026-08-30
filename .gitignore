@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# Node（前端，阶段4引入）
+node_modules/
+dist/
+.vite/
+
+# 环境与日志
+.env
+.env.*
+*.log
+.DS_Store
+Thumbs.db
+
+# 生成式产物（可由 data/preprocess.py 重新生成）
+data/equipment.db
