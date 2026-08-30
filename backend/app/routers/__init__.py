@@ -6,6 +6,7 @@ from .sensor import router as sensor_router
 from .evaluation import router as evaluation_router
 from .alert import router as alert_router
 from .work_order import router as work_order_router
+from .algorithms import router as algorithms_router
 
 ALL_ROUTERS = [
     equipment_router,
@@ -13,4 +14,5 @@ ALL_ROUTERS = [
     evaluation_router,
     alert_router,
     work_order_router,
+    algorithms_router,
 ]

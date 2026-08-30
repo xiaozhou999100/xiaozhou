@@ -1,15 +1,20 @@
 # -*- coding: utf-8 -*-
-"""健康/能耗评估服务。
+"""健康/能耗评估服务（阶段3：接入随机森林 RUL 预测）。
 
-阶段2：采用可解释的规则式评估（基于预处理数据的健康度评分与工况负载推导）。
-阶段3：将升级为随机森林回归模型（基于传感器统计特征预测），本服务为模型调用层预留入口。
+评估流程：
+    1. 基于设备历史传感器时序构造窗口统计特征；
+    2. 随机森林回归模型预测 RUL；
+    3. RUL 映射为 0~100 健康度评分；
+    4. 结合工况推导负载率与能耗效率；
+    5. 保存评估记录并同步更新设备台账健康等级。
 """
 
 from typing import Optional
 
 from sqlalchemy.orm import Session
 
-from ..models import Equipment, HealthEvaluation, SensorData
+from ..models import Equipment, HealthEvaluation
+from .anomaly import evaluate_rul
 
 
 def _grade_of(score: float) -> str:
@@ -23,33 +28,27 @@ def _grade_of(score: float) -> str:
 
 
 def evaluate_device(db: Session, equipment_id: int, cycle: Optional[int] = None) -> HealthEvaluation:
-    """对指定设备执行健康/能耗评估，返回并保存评估记录。
-
-    规则：
-      - health_score：取该设备指定周期（默认最新）预处理数据的健康度评分；
-      - load_rate：由工况归一化均值近似表示设备负载率；
-      - energy_efficiency：综合健康度与负载推导（数值越低越耗能）。
-    """
+    """对指定设备执行随机森林健康/能耗评估，保存并返回评估记录。"""
     equipment = db.get(Equipment, equipment_id)
     if not equipment:
         raise ValueError("设备不存在")
 
-    query = db.query(SensorData).filter(SensorData.equipment_id == equipment_id)
-    if cycle is not None:
-        row = query.filter(SensorData.cycle == cycle).order_by(SensorData.cycle.desc()).first()
-    else:
-        row = query.order_by(SensorData.cycle.desc()).first()
-    if not row:
-        raise ValueError("该设备无传感器数据，无法评估")
+    result = evaluate_rul(db, equipment_id, cycle=cycle)
+    health_score = result["health_score"]
+    pred_cycle = result["cycle"]
 
-    health_score = round(float(row.health_score), 2)
+    # 负载率/能耗效率由工况归一化值近似推导（与阶段2口径一致）
+    from ..models import SensorData
+    row = (db.query(SensorData)
+           .filter(SensorData.equipment_id == equipment_id, SensorData.cycle == pred_cycle)
+           .first())
     load_rate = round(100 * (row.op_setting_1_norm + row.op_setting_2_norm) / 2, 2)
     energy_efficiency = round(max(0.0, min(100.0, 100 - 0.6 * load_rate - 0.4 * (100 - health_score))), 2)
 
     grade = _grade_of(health_score)
     detail = (
-        f"基于第{row.cycle}周期数据评估；健康度{health_score}分，"
-        f"负载率{load_rate}%，能耗效率{energy_efficiency}%。"
+        f"随机森林预测：基于第{pred_cycle}周期窗口特征，RUL≈{result['rul']}周期，"
+        f"健康度{health_score}分；负载率{load_rate}%，能耗效率{energy_efficiency}%。"
     )
 
     record = HealthEvaluation(
