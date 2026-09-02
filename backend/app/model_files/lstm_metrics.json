@@ -1,0 +1,11 @@
+{
+  "val_units": 20,
+  "best_val_mae": 9.529,
+  "seq_len": 30,
+  "n_features": 17,
+  "hidden": 64,
+  "train_samples": 16138,
+  "test_mae": 9.019493103027344,
+  "test_r2": 0.7704877853393555,
+  "test_samples": 13096
+}
