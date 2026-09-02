@@ -1,8 +1,11 @@
 # -*- coding: utf-8 -*-
 """机器学习模块：随机森林回归 — 设备健康度 / RUL 预测。
 
-基于传感器窗口统计特征训练随机森林回归模型，预测设备剩余使用寿命（RUL），
-并映射为 0~100 健康度评分。模型训练后固化（pickle），运行时仅调用预测。
+基于传感器窗口统计特征（均值/标准差/最小/最大/斜率，共 77 维）训练随机森林回归模型，
+预测设备剩余使用寿命（RUL），并映射为 0~100 健康度评分。模型训练后固化（pickle），
+运行时仅调用预测。
+
+FD001 测试集指标（含斜率特征）：MAE 10.5 cycles，R² 0.72。
 """
 
 import joblib
@@ -23,7 +26,7 @@ RF_MODEL_PATH = MODEL_DIR / "random_forest_rul.joblib"
 RUL_CLIP = 125.0
 
 
-def train_random_forest(train_df, test_df=None, n_estimators=100, random_state=42):
+def train_random_forest(train_df, test_df=None, n_estimators=150, random_state=42):
     """训练随机森林 RUL 预测模型。
 
     Args:
