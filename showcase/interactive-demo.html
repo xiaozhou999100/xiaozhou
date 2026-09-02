@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>数字孪生车间 · 交互式系统演示</title>
+<link rel="stylesheet" href="https://miaoda.feishu.cn/fonts/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.6.0/dist/echarts.min.js" integrity="sha384-pPi0zxBAoDu6+JXW/C68UZLvBUUtU+7zonhif43rqj7pxsGyqyqzcian2Rj37Rss" crossorigin="anonymous"></script>
+<style>
+  :root {
+    --bg: #0B1220; --panel: #111A2C; --panel-2: #16213A;
+    --line: #22304C; --line-soft: #1A2740;
+    --text: #E6EDF7; --text-2: #93A5C0; --text-3: #5C6F8F;
+    --cyan: #38BDF8; --green: #34D399; --amber: #F59E0B; --red: #EF4444;
+    --mono: "SFMono-Regular","Cascadia Code",Consolas,"Roboto Mono",monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--bg);color:var(--text);font-family:"Noto Sans SC","PingFang SC","Microsoft YaHei",system-ui,sans-serif;font-size:14px;line-height:1.6;-webkit-font-smoothing:antialiased;overflow:hidden;height:100vh}
+  .app{display:flex;height:100vh}
+  .sidebar{width:220px;flex:none;background:#0A1120;border-right:1px solid var(--line-soft);display:flex;flex-direction:column}
+  .logo{padding:18px 20px;border-bottom:1px solid var(--line-soft);display:flex;align-items:center;gap:10px}
+  .logo svg{flex:none}
+  .logo .t{font-weight:700;font-size:15px}
+  .logo .s{font-size:10px;color:var(--text-3);margin-top:1px}
+  .nav{flex:1;padding:10px 0;overflow-y:auto}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:11px 20px;cursor:pointer;color:var(--text-2);font-size:13.5px;border-left:3px solid transparent;transition:all .15s}
+  .nav-item:hover{color:var(--text);background:rgba(56,189,248,0.05)}
+  .nav-item.active{color:var(--cyan);background:rgba(56,189,248,0.08);border-left-color:var(--cyan)}
+  .nav-item svg{flex:none;width:17px;height:17px}
+  .nav-item .badge{margin-left:auto;font-size:10px;background:var(--red);color:#fff;padding:1px 6px;border-radius:999px;font-weight:600}
+  .side-foot{padding:14px 20px;border-top:1px solid var(--line-soft);font-size:11px;color:var(--text-3)}
+  .side-foot .live{display:flex;align-items:center;gap:6px;color:var(--green)}
+  .side-foot .live .dot{width:7px;height:7px;background:var(--green);border-radius:50%;animation:pulse 1.5s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+  .main{flex:1;display:flex;flex-direction:column;min-width:0}
+  .topbar{height:50px;flex:none;border-bottom:1px solid var(--line-soft);display:flex;align-items:center;padding:0 24px;gap:16px;background:var(--bg)}
+  .topbar .page-title{font-size:16px;font-weight:700}
+  .topbar .page-sub{font-size:12px;color:var(--text-3)}
+  .topbar .spacer{flex:1}
+  .topbar .clock{font-family:var(--mono);font-size:13px;color:var(--text-2)}
+  .topbar .demo-tag{font-size:11px;color:var(--amber);border:1px solid rgba(245,158,11,0.4);padding:2px 10px;border-radius:999px}
+  .content{flex:1;overflow-y:auto;padding:20px 24px}
+  .page{display:none;animation:fadeIn .25s ease}
+  .page.active{display:block}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .card{background:var(--panel);border:1px solid var(--line);padding:18px 20px}
+  .card h3{font-size:14px;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+  .card h3 .hint{font-size:11px;color:var(--text-3);font-weight:400}
+  .grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+  .grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+  .stat{background:var(--panel);border:1px solid var(--line);padding:14px 16px}
+  .stat .v{font-family:var(--mono);font-size:24px;font-weight:700;color:var(--c,var(--cyan));line-height:1.2}
+  .stat .l{font-size:12px;color:var(--text-3);margin-top:3px}
+  .btn{display:inline-flex;align-items:center;gap:6px;padding:7px 16px;font-size:13px;font-weight:500;border:1px solid var(--line);background:var(--panel-2);color:var(--text);cursor:pointer;transition:all .15s;font-family:inherit}
+  .btn:hover{border-color:var(--cyan);color:var(--cyan)}
+  .btn.primary{background:var(--cyan);border-color:var(--cyan);color:#0B1220;font-weight:600}
+  .btn.primary:hover{filter:brightness(1.1);color:#0B1220}
+  .btn.danger{border-color:rgba(239,68,68,0.5);color:var(--red)}
+  .btn.danger:hover{background:rgba(239,68,68,0.1)}
+  .btn.sm{padding:4px 10px;font-size:12px}
+  select,input[type=text]{background:var(--panel-2);border:1px solid var(--line);color:var(--text);padding:7px 12px;font-size:13px;font-family:inherit;outline:none}
+  select:focus,input:focus{border-color:var(--cyan)}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th{text-align:left;padding:10px 12px;color:var(--text-2);font-weight:500;font-size:12px;border-bottom:1px solid var(--line);background:var(--panel-2)}
+  td{padding:10px 12px;border-bottom:1px solid var(--line-soft);color:var(--text-2)}
+  tr:hover td{background:rgba(56,189,248,0.03)}
+  .tag{display:inline-block;padding:2px 9px;font-size:11px;font-weight:500;border-radius:3px}
+  .tag.green{background:rgba(52,211,153,0.15);color:var(--green)}
+  .tag.amber{background:rgba(245,158,11,0.15);color:var(--amber)}
+  .tag.red{background:rgba(239,68,68,0.15);color:var(--red)}
+  .tag.cyan{background:rgba(56,189,248,0.15);color:var(--cyan)}
+  .tag.gray{background:rgba(92,111,143,0.2);color:var(--text-3)}
+  .mono{font-family:var(--mono)}
+  .twin-layout{display:grid;grid-template-columns:1fr 320px;gap:14px}
+  .workshop{background:var(--panel);border:1px solid var(--line);padding:18px}
+  .workshop h3{margin-bottom:14px}
+  .device-grid{display:grid;grid-template-columns:repeat(10,1fr);gap:6px}
+  .dev-cell{aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:9px;font-weight:600;cursor:pointer;border:1px solid transparent;transition:transform .1s,border-color .1s;position:relative}
+  .dev-cell:hover{transform:scale(1.12);z-index:2;border-color:#fff}
+  .dev-cell.s-running{background:rgba(52,211,153,0.25);color:var(--green)}
+  .dev-cell.s-alert{background:rgba(239,68,68,0.3);color:var(--red);animation:blink 1.2s infinite}
+  .dev-cell.s-warn{background:rgba(245,158,11,0.25);color:var(--amber)}
+  .dev-cell.s-stop{background:rgba(92,111,143,0.2);color:var(--text-3)}
+  .dev-cell.selected{border-color:#fff;box-shadow:0 0 0 2px var(--cyan)}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:.55}}
+  .legend{display:flex;gap:14px;margin-top:14px;font-size:11px;color:var(--text-3);flex-wrap:wrap}
+  .legend span{display:flex;align-items:center;gap:5px}
+  .legend i{width:10px;height:10px;display:inline-block}
+  .twin-detail .dev-name{font-size:18px;font-weight:700;margin-bottom:4px}
+  .twin-detail .dev-id{font-family:var(--mono);font-size:12px;color:var(--text-3);margin-bottom:14px}
+  .detail-row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px dashed var(--line-soft);font-size:13px}
+  .detail-row .k{color:var(--text-3)}
+  .detail-row .v{font-family:var(--mono);font-weight:600}
+  .monitor-head{display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+  .chart-box{width:100%;height:260px}
+  .anomaly-list{max-height:260px;overflow-y:auto}
+  .eval-layout{display:grid;grid-template-columns:340px 1fr;gap:14px}
+  .gauge-box{width:100%;height:240px}
+  .eval-result{margin-top:14px;padding:14px;background:var(--panel-2);border:1px solid var(--line-soft);font-size:13px;color:var(--text-2);line-height:1.8;display:none}
+  .eval-result.show{display:block;animation:fadeIn .3s}
+  .eval-result b{color:var(--text)}
+  .alert-head{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+  .loop-demo{margin-top:16px;padding:16px;background:var(--panel-2);border:1px solid var(--line);display:none}
+  .loop-demo.show{display:block}
+  .loop-steps{display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin-top:10px}
+  .loop-step{padding:8px 12px;border:1px solid var(--line);font-size:12px;color:var(--text-3);transition:all .3s;flex:1;min-width:90px;text-align:center}
+  .loop-step.done{border-color:var(--green);color:var(--green);background:rgba(52,211,153,0.08)}
+  .loop-step.active{border-color:var(--cyan);color:var(--cyan);background:rgba(56,189,248,0.1);animation:pulse 1s infinite}
+  .loop-msg{margin-top:12px;font-size:13px;color:var(--text-2);min-height:20px}
+  .wo-head{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+  .eq-head{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+  .pagination{display:flex;gap:6px;margin-top:14px;align-items:center;font-size:12px;color:var(--text-3)}
+  .pagination button{min-width:30px;height:28px}
+  .modal-mask{position:fixed;inset:0;background:rgba(5,9,18,0.7);z-index:50;display:none;align-items:center;justify-content:center}
+  .modal-mask.show{display:flex}
+  .modal{background:var(--panel);border:1px solid var(--line);width:420px;max-width:92vw;padding:22px 24px}
+  .modal h3{font-size:15px;font-weight:700;margin-bottom:14px}
+  .modal .field{margin-bottom:12px}
+  .modal .field label{display:block;font-size:12px;color:var(--text-3);margin-bottom:5px}
+  .modal .field input,.modal .field select{width:100%}
+  .modal .actions{display:flex;gap:10px;justify-content:flex-end;margin-top:18px}
+  .toast{position:fixed;top:60px;right:24px;z-index:100;background:var(--panel-2);border:1px solid var(--cyan);padding:10px 18px;font-size:13px;color:var(--text);opacity:0;transform:translateX(20px);transition:all .25s;pointer-events:none}
+  .toast.show{opacity:1;transform:none}
+  .toast.ok{border-color:var(--green)}
+  .toast.err{border-color:var(--red)}
+  @media(max-width:900px){
+    .sidebar{width:56px}
+    .logo .t,.logo .s,.nav-item span,.nav-item .badge,.side-foot{display:none}
+    .nav-item{justify-content:center;padding:12px 0}
+    .twin-layout,.eval-layout{grid-template-columns:1fr}
+    .grid-4{grid-template-columns:repeat(2,1fr)}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="logo">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#38BDF8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="6" height="5"/><rect x="9" y="14" width="6" height="5"/><rect x="15" y="4" width="6" height="5"/><path d="M6 9v5M12 14v-5M18 9v5"/></svg>
+      <div><div class="t">数字孪生车间</div><div class="s">智能监控与运维平台</div></div>
+    </div>
+    <nav class="nav" id="nav">
+      <div class="nav-item active" data-page="twin"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4M2 8h20"/></svg><span>数字孪生可视化</span></div>
+      <div class="nav-item" data-page="equipment"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg><span>车间设备台账</span></div>
+      <div class="nav-item" data-page="monitoring"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l3-4 3 3 4-6"/></svg><span>实时数据监测</span></div>
+      <div class="nav-item" data-page="evaluation"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg><span>健康与能耗评估</span></div>
+      <div class="nav-item" data-page="alerts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg><span>孪生预警中心</span><span class="badge" id="alertBadge">7</span></div>
+      <div class="nav-item" data-page="work-orders"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13l2 2 4-4"/></svg><span>运维工单管理</span></div>
+    </nav>
+    <div class="side-foot">
+      <div class="live"><span class="dot"></span>模拟数据实时运行中</div>
+      <div style="margin-top:6px">演示模式 · 数据为模拟生成</div>
+    </div>
+  </aside>
+  <div class="main">
+    <div class="topbar">
+      <div><div class="page-title" id="pageTitle">数字孪生可视化</div><div class="page-sub" id="pageSub">车间布局与设备孪生状态</div></div>
+      <div class="spacer"></div>
+      <span class="demo-tag">交互演示</span>
+      <span class="clock" id="clock">--:--:--</span>
+    </div>
+    <div class="content">
+      <div class="page active" id="page-twin">
+        <div class="grid-4" style="margin-bottom:14px">
+          <div class="stat" style="--c:var(--cyan)"><div class="v" id="tTotal">100</div><div class="l">设备总数</div></div>
+          <div class="stat" style="--c:var(--green)"><div class="v" id="tRun">5</div><div class="l">运行中</div></div>
+          <div class="stat" style="--c:var(--amber)"><div class="v" id="tWarn">83</div><div class="l">需关注</div></div>
+          <div class="stat" style="--c:var(--red)"><div class="v" id="tAlert">12</div><div class="l">报警</div></div>
+        </div>
+        <div class="twin-layout">
+          <div class="workshop">
+            <h3>智能车间 · 3号产线设备状态 <span class="hint">点击设备查看详情</span></h3>
+            <div class="device-grid" id="deviceGrid"></div>
+            <div class="legend"><span><i style="background:rgba(52,211,153,0.5)"></i>运行中</span><span><i style="background:rgba(245,158,11,0.5)"></i>需关注</span><span><i style="background:rgba(239,68,68,0.5)"></i>报警</span><span><i style="background:rgba(92,111,143,0.4)"></i>停机</span></div>
+          </div>
+          <div class="card twin-detail">
+            <h3>设备详情</h3>
+            <div class="dev-name" id="tdName">DEV001</div>
+            <div class="dev-id" id="tdId">涡扇发动机 · 3号产线</div>
+            <div class="detail-row"><span class="k">运行状态</span><span class="v" id="tdStatus" style="color:var(--red)">报警</span></div>
+            <div class="detail-row"><span class="k">健康度</span><span class="v" id="tdHealth" style="color:var(--red)">0.00</span></div>
+            <div class="detail-row"><span class="k">剩余寿命 RUL</span><span class="v mono" id="tdRul">0 cycles</span></div>
+            <div class="detail-row"><span class="k">当前周期</span><span class="v mono" id="tdCycle">192</span></div>
+            <div class="detail-row"><span class="k">负载率</span><span class="v mono" id="tdLoad">52.6%</span></div>
+            <div class="detail-row"><span class="k">能耗效率</span><span class="v mono" id="tdEff">28.8%</span></div>
+            <div style="margin-top:16px;display:flex;gap:8px">
+              <button class="btn sm primary" onclick="goPage('monitoring')">实时监测</button>
+              <button class="btn sm" onclick="goPage('evaluation')">健康评估</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="page" id="page-equipment">
+        <div class="card">
+          <div class="eq-head">
+            <input type="text" id="eqSearch" placeholder="搜索设备编号 / 名称..." style="width:240px">
+            <select id="eqFilter"><option value="">全部状态</option><option value="running">运行中</option><option value="warn">需关注</option><option value="alert">报警</option><option value="stop">停机</option></select>
+            <div class="spacer" style="flex:1"></div>
+            <button class="btn primary sm" onclick="openModal('addEq')">+ 新增设备</button>
+          </div>
+          <table><thead><tr><th>设备编号</th><th>名称</th><th>型号</th><th>状态</th><th>健康度</th><th>位置</th><th>操作</th></tr></thead><tbody id="eqTable"></tbody></table>
+          <div class="pagination" id="eqPager"></div>
+        </div>
+      </div>
+      <div class="page" id="page-monitoring">
+        <div class="monitor-head">
+          <span style="font-size:13px;color:var(--text-3)">设备：</span>
+          <select id="monDevice"></select>
+          <span style="font-size:13px;color:var(--text-3)">当前周期：</span>
+          <span class="mono" id="monCycle" style="color:var(--cyan)">#192</span>
+          <div class="spacer" style="flex:1"></div>
+          <button class="btn sm" id="monPauseBtn" onclick="toggleMonitor()">暂停刷新</button>
+        </div>
+        <div class="grid-4" style="margin-bottom:14px">
+          <div class="stat" style="--c:var(--red)"><div class="v" id="mHealth">0.00</div><div class="l">健康度</div></div>
+          <div class="stat" style="--c:var(--red)"><div class="v" id="mLevel">严重</div><div class="l">健康等级</div></div>
+          <div class="stat" style="--c:var(--amber)"><div class="v mono" id="mRul">≈0</div><div class="l">RUL (cycles)</div></div>
+          <div class="stat" style="--c:var(--cyan)"><div class="v mono" id="mAnomaly">3</div><div class="l">异常标记数</div></div>
+        </div>
+        <div class="grid-2" style="margin-bottom:14px">
+          <div class="card"><h3>HPT 排气温度 <span class="hint">最近 120 周期</span></h3><div class="chart-box" id="chartTemp"></div></div>
+          <div class="card"><h3>HPC 出口压力 <span class="hint">最近 120 周期</span></h3><div class="chart-box" id="chartPres"></div></div>
+        </div>
+        <div class="card">
+          <h3>最近周期数据明细 <span class="hint">每 2 秒自动追加</span></h3>
+          <div class="anomaly-list"><table><thead><tr><th>周期</th><th>HPT排气温度</th><th>HPC出口压力</th><th>风扇转速</th><th>健康度</th><th>标记</th></tr></thead><tbody id="monTable"></tbody></table></div>
+        </div>
+      </div>
+      <div class="page" id="page-evaluation">
+        <div class="eval-layout">
+          <div class="card">
+            <h3>健康度评估</h3>
+            <div style="margin-bottom:12px"><span style="font-size:13px;color:var(--text-3)">设备：</span><select id="evalDevice" style="width:100%;margin-top:6px"></select></div>
+            <button class="btn primary" style="width:100%" onclick="triggerEval()">触发随机森林评估</button>
+            <div class="gauge-box" id="gaugeChart" style="margin-top:10px"></div>
+          </div>
+          <div>
+            <div class="card" style="margin-bottom:14px">
+              <h3>评估结果</h3>
+              <div class="eval-result" id="evalResult">
+                <div><b>健康等级：</b><span class="tag red" id="erLevel">严重</span></div>
+                <div style="margin-top:8px"><b>预测说明：</b><span id="erDesc">基于第 192 周期窗口特征，随机森林预测 RUL≈0.93 周期，健康度 0.75 分；负载率 52.59%，能耗效率 28.75%。</span></div>
+                <div style="margin-top:8px"><b>评估时间：</b><span class="mono" id="erTime">--</span></div>
+              </div>
+              <div id="evalEmpty" style="color:var(--text-3);font-size:13px;padding:20px 0;text-align:center">点击左侧「触发随机森林评估」生成评估结果</div>
+            </div>
+            <div class="card">
+              <h3>历史评估记录 <span class="hint">按时间倒序</span></h3>
+              <table><thead><tr><th>ID</th><th>设备</th><th>评估时间</th><th>健康度</th><th>等级</th></tr></thead><tbody id="evalHistory"><tr><td class="mono">2</td><td>DEV001</td><td class="mono">2026-09-02 19:43:53</td><td class="mono">0.75</td><td><span class="tag red">严重</span></td></tr><tr><td class="mono">1</td><td>DEV001</td><td class="mono">2026-08-30 11:29:47</td><td class="mono">0.82</td><td><span class="tag amber">注意</span></td></tr></tbody></table>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="page" id="page-alerts">
+        <div class="card">
+          <div class="alert-head">
+            <select id="alertFilter" onchange="renderAlerts()"><option value="">全部类型</option><option value="传感器异常">传感器异常</option><option value="专家诊断">专家诊断</option><option value="节拍异常">节拍异常</option><option value="能耗超标">能耗超标</option><option value="健康度过低">健康度过低</option></select>
+            <div class="spacer" style="flex:1"></div>
+            <button class="btn sm" onclick="runIsolationForest()">孤立森林异常检测</button>
+            <button class="btn primary sm" onclick="startLoopDemo()">一键闭环演练</button>
+          </div>
+          <table><thead><tr><th>ID</th><th>设备ID</th><th>预警类型</th><th>等级</th><th>时间</th><th>操作</th></tr></thead><tbody id="alertTable"></tbody></table>
+          <div class="loop-demo" id="loopDemo">
+            <h3 style="font-size:13px">闭环演练进度</h3>
+            <div class="loop-steps" id="loopSteps">
+              <div class="loop-step" data-i="0">① 异常检测</div>
+              <div class="loop-step" data-i="1">② 生成预警</div>
+              <div class="loop-step" data-i="2">③ 专家诊断</div>
+              <div class="loop-step" data-i="3">④ 生成工单</div>
+              <div class="loop-step" data-i="4">⑤ 状态流转</div>
+              <div class="loop-step" data-i="5">⑥ 闭环完成</div>
+            </div>
+            <div class="loop-msg" id="loopMsg">点击「一键闭环演练」开始...</div>
+          </div>
+        </div>
+      </div>
+      <div class="page" id="page-work-orders">
+        <div class="card">
+          <div class="wo-head">
+            <select id="woFilter" onchange="renderWO()"><option value="">全部状态</option><option value="待处理">待处理</option><option value="维修中">维修中</option><option value="已完成">已完成</option></select>
+            <div class="spacer" style="flex:1"></div>
+            <button class="btn primary sm" onclick="openModal('addWO')">+ 新建工单</button>
+          </div>
+          <table><thead><tr><th>工单号</th><th>关联设备</th><th>故障描述</th><th>优先级</th><th>状态</th><th>创建时间</th><th>操作</th></tr></thead><tbody id="woTable"></tbody></table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="modal-mask" id="modal-addEq">
+  <div class="modal">
+    <h3>新增设备</h3>
+    <div class="field"><label>设备编号</label><input type="text" id="neId" placeholder="如 DEV101"></div>
+    <div class="field"><label>设备名称</label><input type="text" id="neName" placeholder="如 3号涡扇发动机"></div>
+    <div class="field"><label>型号</label><input type="text" id="neModel" placeholder="如 CFM56-7B"></div>
+    <div class="field"><label>位置</label><input type="text" id="neLoc" placeholder="如 3号产线"></div>
+    <div class="actions"><button class="btn" onclick="closeModal('addEq')">取消</button><button class="btn primary" onclick="addEquipment()">确认添加</button></div>
+  </div>
+</div>
+<div class="modal-mask" id="modal-addWO">
+  <div class="modal">
+    <h3>新建运维工单</h3>
+    <div class="field"><label>关联设备</label><select id="nwDev"></select></div>
+    <div class="field"><label>故障描述</label><input type="text" id="nwDesc" placeholder="如 HPT排气温度异常升高"></div>
+    <div class="field"><label>优先级</label><select id="nwPri"><option>高</option><option>中</option><option>低</option></select></div>
+    <div class="actions"><button class="btn" onclick="closeModal('addWO')">取消</button><button class="btn primary" onclick="addWorkOrder()">确认创建</button></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+(function(){
+  var STATUS_MAP={running:{t:"运行中",c:"green",cls:"s-running"},warn:{t:"需关注",c:"amber",cls:"s-warn"},alert:{t:"报警",c:"red",cls:"s-alert"},stop:{t:"停机",c:"gray",cls:"s-stop"}};
+  var devices=[];
+  for(var i=1;i<=100;i++){
+    var id="DEV"+String(i).padStart(3,"0");
+    var r=Math.random();
+    var st=r<0.05?"running":(r<0.88?"warn":(r<0.97?"alert":"stop"));
+    if(i===1)st="alert";if(i===2)st="alert";if(i===3)st="warn";if(i===4)st="running";
+    devices.push({id:id,name:id+" 涡扇发动机",model:"CFM56-7B",loc:"3号产线",status:st,
+      health:st==="alert"?(Math.random()*0.3+0.05).toFixed(2):(st==="warn"?(Math.random()*0.3+0.5).toFixed(2):(st==="running"?(Math.random()*0.15+0.8).toFixed(2):"0.00")),
+      rul:st==="alert"?Math.floor(Math.random()*10):(st==="warn"?Math.floor(Math.random()*60+20):(st==="running"?Math.floor(Math.random()*80+40):0)),
+      cycle:Math.floor(Math.random()*150+50),load:(Math.random()*40+30).toFixed(1),eff:(Math.random()*30+25).toFixed(1)});
+  }
+  var alerts=[
+    {id:7,dev:"DEV001",type:"传感器异常",level:"严重",time:"2026-09-02 20:15"},
+    {id:6,dev:"DEV001",type:"专家诊断",level:"严重",time:"2026-09-02 20:14"},
+    {id:5,dev:"DEV001",type:"传感器异常",level:"高",time:"2026-09-02 20:10"},
+    {id:4,dev:"DEV008",type:"节拍异常",level:"中",time:"2026-09-02 19:55"},
+    {id:3,dev:"DEV005",type:"能耗超标",level:"中",time:"2026-09-02 19:40"},
+    {id:2,dev:"DEV002",type:"传感器异常",level:"高",time:"2026-09-02 19:22"},
+    {id:1,dev:"DEV001",type:"健康度过低",level:"严重",time:"2026-09-02 19:00"}
+  ];
+  var workOrders=[
+    {no:"WO20260902001",dev:"DEV001",desc:"HPT排气温度异常升高，疑似涡轮叶片磨损",pri:"高",status:"维修中",time:"2026-09-02 20:14"},
+    {no:"WO20260902002",dev:"DEV008",desc:"产线节拍异常，需检查传动系统",pri:"中",status:"待处理",time:"2026-09-02 19:55"},
+    {no:"WO20260830003",dev:"DEV003",desc:"定期维护保养",pri:"低",status:"已完成",time:"2026-08-30 14:00"},
+    {no:"WO20260830004",dev:"DEV005",desc:"能耗超标排查",pri:"中",status:"已完成",time:"2026-08-30 10:30"}
+  ];
+  var eqPage=1,eqPageSize=8;
+  var titles={twin:["数字孪生可视化","车间布局与设备孪生状态"],equipment:["车间设备台账","设备档案 CRUD 管理"],monitoring:["实时数据监测","传感器曲线与异常标记"],evaluation:["健康与能耗评估","随机森林评估触发"],alerts:["孪生预警中心","预警列表与闭环演练"],"work-orders":["运维工单管理","工单状态流转"]};
+  var navItems=document.querySelectorAll(".nav-item");
+  navItems.forEach(function(n){n.addEventListener("click",function(){goPage(n.dataset.page);});});
+  window.goPage=function(p){
+    navItems.forEach(function(n){n.classList.toggle("active",n.dataset.page===p);});
+    document.querySelectorAll(".page").forEach(function(pg){pg.classList.remove("active");});
+    document.getElementById("page-"+p).classList.add("active");
+    document.getElementById("pageTitle").textContent=titles[p][0];
+    document.getElementById("pageSub").textContent=titles[p][1];
+    if(p==="monitoring")startMonitor();else stopMonitor();
+    if(p==="evaluation")initGauge();
+  };
+  function tick(){var d=new Date();document.getElementById("clock").textContent=d.toLocaleTimeString("zh-CN",{hour12:false});}
+  tick();setInterval(tick,1000);
+  var toastT;
+  window.showToast=function(msg,type){var t=document.getElementById("toast");t.textContent=msg;t.className="toast show "+(type||"");clearTimeout(toastT);toastT=setTimeout(function(){t.className="toast";},2400);};
+  function renderTwin(){
+    var grid=document.getElementById("deviceGrid");grid.innerHTML="";
+    devices.forEach(function(d,idx){
+      var c=document.createElement("div");c.className="dev-cell "+STATUS_MAP[d.status].cls;c.textContent=d.id.replace("DEV","");c.title=d.id+" · "+STATUS_MAP[d.status].t;
+      if(idx===0)c.classList.add("selected");
+      c.addEventListener("click",function(){document.querySelectorAll(".dev-cell").forEach(function(x){x.classList.remove("selected");});c.classList.add("selected");selectDevice(d.id);});
+      grid.appendChild(c);
+    });
+    var counts={running:0,warn:0,alert:0,stop:0};devices.forEach(function(d){counts[d.status]++;});
+    document.getElementById("tRun").textContent=counts.running;document.getElementById("tWarn").textContent=counts.warn;document.getElementById("tAlert").textContent=counts.alert;
+  }
+  function selectDevice(id){
+    var d=devices.find(function(x){return x.id===id;});if(!d)return;
+    document.getElementById("tdName").textContent=d.id;document.getElementById("tdId").textContent=d.name+" · "+d.loc;
+    var s=STATUS_MAP[d.status];var el=document.getElementById("tdStatus");el.textContent=s.t;el.style.color="var(--"+s.c+")";
+    document.getElementById("tdHealth").textContent=d.health;document.getElementById("tdHealth").style.color="var(--"+s.c+")";
+    document.getElementById("tdRul").textContent=d.rul+" cycles";document.getElementById("tdCycle").textContent=d.cycle;
+    document.getElementById("tdLoad").textContent=d.load+"%";document.getElementById("tdEff").textContent=d.eff+"%";
+  }
+  renderTwin();selectDevice("DEV001");
+  function renderEq(){
+    var q=document.getElementById("eqSearch").value.toLowerCase();var f=document.getElementById("eqFilter").value;
+    var list=devices.filter(function(d){return(!q||d.id.toLowerCase().indexOf(q)>=0||d.name.toLowerCase().indexOf(q)>=0)&&(!f||d.status===f);});
+    var total=Math.max(1,Math.ceil(list.length/eqPageSize));if(eqPage>total)eqPage=total;
+    var slice=list.slice((eqPage-1)*eqPageSize,eqPage*eqPageSize);
+    var tb=document.getElementById("eqTable");tb.innerHTML="";
+    if(slice.length===0){tb.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--text-3);padding:24px">无匹配设备</td></tr>';}
+    slice.forEach(function(d){
+      var s=STATUS_MAP[d.status];var tr=document.createElement("tr");
+      tr.innerHTML='<td class="mono">'+d.id+'</td><td>'+d.name+'</td><td>'+d.model+'</td><td><span class="tag '+s.c+'">'+s.t+'</span></td><td class="mono">'+d.health+'</td><td>'+d.loc+'</td><td><button class="btn sm" onclick="goPage(\'monitoring\')">监测</button> <button class="btn sm" onclick="goPage(\'evaluation\')">评估</button> <button class="btn sm danger" onclick="delEq(\''+d.id+'\')">删除</button></td>';
+      tb.appendChild(tr);
+    });
+    var pg=document.getElementById("eqPager");
+    pg.innerHTML='共 '+list.length+' 台 · 第 '+eqPage+'/'+total+' 页 <button class="btn sm" onclick="eqPage=Math.max(1,eqPage-1);renderEq()">上一页</button><button class="btn sm" onclick="eqPage=Math.min('+total+',eqPage+1);renderEq()">下一页</button>';
+  }
+  document.getElementById("eqSearch").addEventListener("input",function(){eqPage=1;renderEq();});
+  document.getElementById("eqFilter").addEventListener("change",function(){eqPage=1;renderEq();});
+  window.delEq=function(id){devices=devices.filter(function(d){return d.id!==id;});renderEq();renderTwin();showToast("设备 "+id+" 已删除","ok");};
+  window.addEquipment=function(){
+    var id=document.getElementById("neId").value.trim();var name=document.getElementById("neName").value.trim();
+    var model=document.getElementById("neModel").value.trim()||"CFM56-7B";var loc=document.getElementById("neLoc").value.trim()||"3号产线";
+    if(!id){showToast("请填写设备编号","err");return;}
+    if(devices.find(function(d){return d.id===id;})){showToast("设备编号已存在","err");return;}
+    devices.unshift({id:id,name:name||id+" 设备",model:model,loc:loc,status:"running",health:"0.92",rul:85,cycle:12,load:"35.0",eff:"68.0"});
+    closeModal("addEq");renderEq();renderTwin();
+    document.getElementById("neId").value="";document.getElementById("neName").value="";
+    showToast("设备 "+id+" 已添加","ok");
+  };
+  renderEq();
+  var monChart1,monChart2,monTimer=null,monPaused=false,monData1=[],monData2=[],monCycleNum=192;
+  function fillDeviceSelects(){
+    var opts=devices.slice(0,20).map(function(d){return '<option value="'+d.id+'">'+d.id+'</option>';}).join("");
+    document.getElementById("monDevice").innerHTML=opts;document.getElementById("evalDevice").innerHTML=opts;document.getElementById("nwDev").innerHTML=opts;
+  }
+  fillDeviceSelects();
+  function initMonCharts(){
+    if(monChart1)return;
+    monChart1=echarts.init(document.getElementById("chartTemp"));monChart2=echarts.init(document.getElementById("chartPres"));
+    genMonData();drawMonCharts();
+  }
+  function genMonData(){
+    monData1=[];monData2=[];
+    for(var i=0;i<120;i++){
+      monData1.push([i,(640+Math.random()*30+Math.sin(i/8)*15+(i>100?20:0)).toFixed(1)]);
+      monData2.push([i,(55+Math.random()*3+Math.cos(i/10)*2+(i>100?2:0)).toFixed(2)]);
+    }
+  }
+  function drawMonCharts(){
+    var opt=function(data,name,color,unit){return{
+      backgroundColor:"transparent",textStyle:{color:"#E6EDF7"},
+      tooltip:{trigger:"axis",triggerOn:"click",renderMode:"richText",confine:true,textStyle:{fontSize:11}},
+      grid:{left:50,right:16,top:20,bottom:28,containLabel:true},
+      xAxis:{type:"value",name:"周期",nameTextStyle:{color:"#5C6F8F",fontSize:10},axisLabel:{color:"#5C6F8F",fontSize:10},splitLine:{show:false}},
+      yAxis:{type:"value",name:unit,nameTextStyle:{color:"#5C6F8F",fontSize:10},axisLabel:{color:"#5C6F8F",fontSize:10},splitLine:{lineStyle:{color:"#22304C",type:"dashed"}}},
+      series:[{name:name,type:"line",data:data,smooth:true,symbol:"none",lineStyle:{color:color,width:1.8},areaStyle:{color:new echarts.graphic.LinearGradient(0,0,0,1,[{offset:0,color:color+"44"},{offset:1,color:color+"05"}])},markPoint:{data:[{type:"max",name:"异常峰值"}],itemStyle:{color:"#EF4444"},label:{color:"#fff",fontSize:10}}}]
+    };};
+    monChart1.setOption(opt(monData1,"HPT排气温度","#38BDF8","°C"));
+    monChart2.setOption(opt(monData2,"HPC出口压力","#34D399","kPa"));
+  }
+  function pushMonData(){
+    if(monPaused)return;monCycleNum++;
+    var last1=parseFloat(monData1[monData1.length-1][1]);var last2=parseFloat(monData2[monData2.length-1][1]);
+    monData1.push([monCycleNum,(last1+(Math.random()-0.45)*8).toFixed(1)]);monData2.push([monCycleNum,(last2+(Math.random()-0.45)*1.5).toFixed(2)]);
+    if(monData1.length>120){monData1.shift();monData2.shift();}
+    drawMonCharts();document.getElementById("monCycle").textContent="#"+monCycleNum;
+    var tb=document.getElementById("monTable");var tr=document.createElement("tr");var anom=Math.random()<0.15;
+    tr.innerHTML='<td class="mono">'+monCycleNum+'</td><td class="mono">'+monData1[monData1.length-1][1]+'</td><td class="mono">'+monData2[monData2.length-1][1]+'</td><td class="mono">'+(2388+Math.random()*10).toFixed(0)+'</td><td class="mono">'+(Math.random()*0.3+0.05).toFixed(2)+'</td><td>'+(anom?'<span class="tag red">异常</span>':'<span class="tag gray">正常</span>')+'</td>';
+    tb.insertBefore(tr,tb.firstChild);while(tb.children.length>10)tb.removeChild(tb.lastChild);
+  }
+  window.startMonitor=function(){initMonCharts();if(!monTimer){monTimer=setInterval(pushMonData,2000);}};
+  window.stopMonitor=function(){if(monTimer){clearInterval(monTimer);monTimer=null;}};
+  window.toggleMonitor=function(){monPaused=!monPaused;document.getElementById("monPauseBtn").textContent=monPaused?"继续刷新":"暂停刷新";showToast(monPaused?"已暂停实时刷新":"已恢复实时刷新");};
+  document.getElementById("monDevice").addEventListener("change",function(){monCycleNum=100+Math.floor(Math.random()*100);genMonData();drawMonCharts();document.getElementById("monCycle").textContent="#"+monCycleNum;showToast("已切换到设备 "+this.value);});
+  var gaugeInited=false;
+  window.initGauge=function(){
+    if(gaugeInited)return;gaugeInited=true;
+    var c=echarts.init(document.getElementById("gaugeChart"));
+    c.setOption({backgroundColor:"transparent",series:[{type:"gauge",min:0,max:100,startAngle:200,endAngle:-20,
+      axisLine:{lineStyle:{width:18,color:[[0.3,"#EF4444"],[0.6,"#F59E0B"],[1,"#34D399"]]}},
+      pointer:{itemStyle:{color:"#38BDF8"},length:"60%",width:5},
+      axisTick:{distance:-22,length:6,lineStyle:{color:"#fff",width:1}},
+      splitLine:{distance:-26,length:10,lineStyle:{color:"#fff",width:2}},
+      axisLabel:{color:"#5C6F8F",distance:-38,fontSize:10},
+      detail:{valueAnimation:true,formatter:"{value}",color:"#E6EDF7",fontSize:28,offsetCenter:[0,"70%"],fontFamily:"Consolas,monospace"},
+      title:{offsetCenter:[0,"95%"],color:"#93A5C0",fontSize:12},
+      data:[{value:75,name:"健康度"}]}]});
+    window._gauge=c;
+  };
+  window.triggerEval=function(){
+    var dev=document.getElementById("evalDevice").value;
+    var d=devices.find(function(x){return x.id===dev;})||devices[0];
+    var h=Math.round(parseFloat(d.health)*100);var rul=Math.max(0,d.rul+Math.floor((Math.random()-0.5)*6));
+    var level=h<40?"严重":(h<70?"注意":"良好");var lc=level==="严重"?"red":(level==="注意"?"amber":"green");
+    window._gauge.setOption({series:[{data:[{value:h,name:"健康度"}]}]});
+    document.getElementById("evalEmpty").style.display="none";
+    var er=document.getElementById("evalResult");er.classList.add("show");
+    document.getElementById("erLevel").className="tag "+lc;document.getElementById("erLevel").textContent=level;
+    document.getElementById("erDesc").textContent="基于第 "+d.cycle+" 周期窗口特征（77维），随机森林预测 RUL≈"+rul+" 周期，健康度 "+(h/100).toFixed(2)+" 分；负载率 "+d.load+"%，能耗效率 "+d.eff+"%。";
+    document.getElementById("erTime").textContent=new Date().toLocaleString("zh-CN",{hour12:false});
+    var tb=document.getElementById("evalHistory");var tr=document.createElement("tr");
+    tr.innerHTML='<td class="mono">'+(tb.children.length+1)+'</td><td>'+dev+'</td><td class="mono">'+new Date().toLocaleString("zh-CN",{hour12:false})+'</td><td class="mono">'+(h/100).toFixed(2)+'</td><td><span class="tag '+lc+'">'+level+'</span></td>';
+    tb.insertBefore(tr,tb.firstChild);
+    showToast("评估完成："+dev+" 健康度 "+(h/100).toFixed(2)+"（"+level+"）","ok");
+  };
+  function renderAlerts(){
+    var f=document.getElementById("alertFilter").value;var list=alerts.filter(function(a){return!f||a.type===f;});
+    var tb=document.getElementById("alertTable");tb.innerHTML="";
+    list.forEach(function(a){
+      var lc=a.level==="严重"?"red":(a.level==="高"?"amber":"gray");var tr=document.createElement("tr");
+      tr.innerHTML='<td class="mono">'+a.id+'</td><td class="mono">'+a.dev+'</td><td>'+a.type+'</td><td><span class="tag '+lc+'">'+a.level+'</span></td><td class="mono">'+a.time+'</td><td><button class="btn sm" onclick="genWOFromAlert('+a.id+')">生成工单</button> <button class="btn sm" onclick="handleAlert('+a.id+')">处理</button></td>';
+      tb.appendChild(tr);
+    });
+    document.getElementById("alertBadge").textContent=alerts.length;
+  }
+  window.genWOFromAlert=function(id){
+    var a=alerts.find(function(x){return x.id===id;});if(!a)return;
+    var no="WO"+new Date().toISOString().slice(0,10).replace(/-/g,"")+String(Math.floor(Math.random()*900)+100);
+    workOrders.unshift({no:no,dev:a.dev,desc:a.type+" - 自动生成工单",pri:a.level==="严重"?"高":"中",status:"待处理",time:new Date().toLocaleString("zh-CN",{hour12:false})});
+    showToast("已生成工单 "+no,"ok");
+  };
+  window.handleAlert=function(id){alerts=alerts.filter(function(a){return a.id!==id;});renderAlerts();showToast("预警 #"+id+" 已标记处理","ok");};
+  window.runIsolationForest=function(){
+    var newId=alerts.length?alerts[0].id+1:1;
+    alerts.unshift({id:newId,dev:"DEV00"+(Math.floor(Math.random()*9)+1),type:"传感器异常",level:Math.random()<0.5?"严重":"高",time:new Date().toLocaleString("zh-CN",{hour12:false})});
+    renderAlerts();showToast("孤立森林检测到 1 条新异常","ok");
+  };
+  renderAlerts();
+  window.startLoopDemo=function(){
+    var demo=document.getElementById("loopDemo");demo.classList.add("show");
+    var steps=document.querySelectorAll("#loopSteps .loop-step");steps.forEach(function(s){s.className="loop-step";});
+    var msgs=["孤立森林正在分析传感器窗口特征...","检测到 DEV001 异常偏离，自动生成预警 #"+(alerts.length+1),
+      "专家系统命中规则 R001：HPT排气温度持续升高 → 涡轮叶片磨损（严重）",
+      "自动创建运维工单 WO20260902099，优先级：高",
+      "工单状态：待处理 → 维修中 → 已完成","闭环完成！异常已处置，设备恢复监测。"];
+    var i=0;
+    function next(){if(i>0){steps[i-1].className="loop-step done";}if(i>=steps.length){showToast("闭环演练完成 ✓","ok");return;}steps[i].className="loop-step active";document.getElementById("loopMsg").textContent=msgs[i];i++;setTimeout(next,1100);}
+    next();
+  };
+  function renderWO(){
+    var f=document.getElementById("woFilter").value;var list=workOrders.filter(function(w){return!f||w.status===f;});
+    var tb=document.getElementById("woTable");tb.innerHTML="";
+    list.forEach(function(w){
+      var sc=w.status==="已完成"?"green":(w.status==="维修中"?"amber":"gray");var pc=w.pri==="高"?"red":(w.pri==="中"?"amber":"gray");
+      var tr=document.createElement("tr");
+      var act=w.status==="待处理"?'<button class="btn sm primary" onclick="woNext(\''+w.no+'\')">开始维修</button>':w.status==="维修中"?'<button class="btn sm" onclick="woNext(\''+w.no+'\')">完成</button>':'<span style="color:var(--text-3);font-size:12px">已归档</span>';
+      tr.innerHTML='<td class="mono">'+w.no+'</td><td class="mono">'+w.dev+'</td><td>'+w.desc+'</td><td><span class="tag '+pc+'">'+w.pri+'</span></td><td><span class="tag '+sc+'">'+w.status+'</span></td><td class="mono">'+w.time+'</td><td>'+act+'</td>';
+      tb.appendChild(tr);
+    });
+  }
+  window.woNext=function(no){var w=workOrders.find(function(x){return x.no===no;});if(!w)return;w.status=w.status==="待处理"?"维修中":"已完成";renderWO();showToast("工单 "+no+" 状态 → "+w.status,"ok");};
+  window.addWorkOrder=function(){
+    var dev=document.getElementById("nwDev").value;var desc=document.getElementById("nwDesc").value.trim();var pri=document.getElementById("nwPri").value;
+    if(!desc){showToast("请填写故障描述","err");return;}
+    var no="WO"+new Date().toISOString().slice(0,10).replace(/-/g,"")+String(Math.floor(Math.random()*900)+100);
+    workOrders.unshift({no:no,dev:dev,desc:desc,pri:pri,status:"待处理",time:new Date().toLocaleString("zh-CN",{hour12:false})});
+    closeModal("addWO");renderWO();document.getElementById("nwDesc").value="";showToast("工单 "+no+" 已创建","ok");
+  };
+  renderWO();
+  window.openModal=function(id){document.getElementById("modal-"+id).classList.add("show");};
+  window.closeModal=function(id){document.getElementById("modal-"+id).classList.remove("show");};
+  document.querySelectorAll(".modal-mask").forEach(function(m){m.addEventListener("click",function(e){if(e.target===m)m.classList.remove("show");});});
+  if(window.ResizeObserver){new ResizeObserver(function(){if(monChart1)monChart1.resize();if(monChart2)monChart2.resize();if(window._gauge)window._gauge.resize();}).observe(document.querySelector(".content"));}
+})();
+</script>
+</body>
+</html>
