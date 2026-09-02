@@ -36,8 +36,8 @@ xiaozhou/
 │   │   ├── schemas/            # Pydantic 请求/响应模型
 │   │   ├── routers/            # 路由（设备/传感器/评估/预警/工单/算法）
 │   │   ├── services/           # 业务逻辑（健康评估/异常检测/专家诊断）
-│   │   ├── algorithms/         # 算法模块（特征工程/随机森林/孤立森林/专家系统/训练脚本）
-│   │   ├── model_files/        # 固化模型（random_forest_rul.joblib / isolation_forest.pkl）
+│   │   ├── algorithms/         # 算法模块（特征工程/随机森林/孤立森林/LSTM/专家系统/训练脚本）
+│   │   ├── model_files/        # 固化模型（random_forest_rul.joblib / isolation_forest.pkl / lstm_rul.pt）
 │   │   └── seed.py             # 数据导入脚本
 │   ├── tests/                  # pytest 测试（48 个用例，含闭环集成测试）
 │   └── requirements.txt
@@ -94,9 +94,9 @@ AI 交互记录按阶段归档至 `/prompt/` 目录（JSON 格式），每阶段
 cd backend
 pip install -r requirements.txt        # 安装依赖
 python -m app.seed                     # 导入预处理数据生成 equipment.db（可重复执行）
-python -m app.algorithms.train         # 训练并固化模型（随机森林/孤立森林，可重复执行）
+python -m app.algorithms.train         # 训练并固化模型（随机森林/孤立森林/LSTM，可重复执行）
 python -m uvicorn app.main:app --host 127.0.0.1 --port 8000   # 启动服务
-python -m pytest tests -v              # 运行自动化测试（48 个用例）
+python -m pytest tests -v              # 运行自动化测试（52 个用例）
 ```
 
 服务启动后访问 `http://127.0.0.1:8000/docs` 查看 Swagger 接口文档。
@@ -107,11 +107,17 @@ python -m pytest tests -v              # 运行自动化测试（48 个用例）
 
 | 算法 | 方法 | 指标 |
 | --- | --- | --- |
-| 健康度/RUL 预测 | 随机森林回归（30 周期窗口统计特征 62 维） | 测试集 MAE 13.55 cycles，R² 0.53 |
-| 异常检测 | 孤立森林（健康早期 50% 样本建基线） | 精确率 0.43，召回率 0.26 |
+| 健康度/RUL 预测 | 随机森林回归（30 周期窗口统计特征 77 维，含趋势斜率） | 测试集 MAE 10.55 cycles，R² 0.72 |
+| 健康度/RUL 预测 | LSTM 深度学习时序模型（30 周期 × 17 归一化特征） | 测试集 MAE 9.02 cycles，R² 0.77（更优） |
+| 异常检测 | 孤立森林（健康早期 50% 样本建基线） | 精确率 0.49，召回率 0.29 |
 | 故障诊断 | 专家系统 IF-THEN 规则库（20 条，R001~R020） | 输出故障部位/排查步骤/维修建议 |
 
-算法固化于 `backend/app/model_files/`，运行时不重新训练；`python -m app.algorithms.train` 可一键重训。
+> 阶段 6 模型重训：在 62 维统计特征基础上新增**传感器线性趋势斜率**特征（77 维），
+> 随机森林 R² 由 0.53 提升至 0.72；并补训**深度学习 LSTM** 时序模型（学习笔记规划的
+> 四大核心技术之一），测试集 MAE 9.02 / R² 0.77，优于随机森林，达成"深度学习对比优化"目标。
+
+算法固化于 `backend/app/model_files/`（random_forest_rul.joblib / isolation_forest.pkl / lstm_rul.pt），
+运行时不重新训练；`python -m app.algorithms.train` 可一键重训全部模型。
 
 ### 4.2 前端运行说明（阶段4）
 
@@ -142,7 +148,7 @@ npm run build                        # 生产构建（输出 dist/）
 ```
 
 **整体测试**：
-- 后端自动化测试 **48 个用例全部通过**（43 个基础/算法 + 5 个闭环集成测试）
+- 后端自动化测试 **52 个用例全部通过**（48 个基础/算法/闭环 + 4 个 LSTM 深度学习）
 - 闭环集成测试覆盖：异常检测→预警、诊断→工单、工单状态流转、预警一键生成工单并标记处理、全链路闭环
 - 前端提供「一键闭环演练」按钮（预警中心页），输入设备 ID 即可一键演示完整闭环
 - 已在真实运行的前后端环境中用浏览器完整演示闭环（DEV001 末端寿命设备：检出异常→预警→诊断命中 R001 严重→自动生成工单→状态流转至已完成）
@@ -156,6 +162,7 @@ npm run build                        # 生产构建（输出 dist/）
 | 阶段 3 | 算法模块：随机森林/孤立森林/专家系统规则库 + 服务集成 | ✅ 完成（2026-08-30） |
 | 阶段 4 | 前端孪生大屏与六大页面（Vue3+Element Plus+ECharts） | ✅ 完成（2026-08-30） |
 | 阶段 5 | 预警-诊断-工单闭环联调与整体测试 | ✅ 完成（2026-08-30） |
+| 阶段 6 | 模型重训：特征工程升级（+斜率 77 维）+ 深度学习 LSTM 训练与对比 | ✅ 完成（2026-09-02） |
 
 ## 六、运行环境
 

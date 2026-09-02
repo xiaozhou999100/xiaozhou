@@ -1,0 +1,45 @@
+{
+  "stage": 6,
+  "stage_name": "模型重训：特征工程升级 + 深度学习 LSTM 训练与对比",
+  "date": "2026-09-02",
+  "course_design": "数字孪生车间智能监控与运维平台",
+  "record_policy": "按阶段归档与AI工具的全部交互，留存prompt原文、AI产出要点与验收结果，上下文压缩前先备份本记录",
+  "sessions": [
+    {
+      "session_no": 1,
+      "time": "2026-09-02",
+      "ai_tool": "豆包电脑端（AI Agent）",
+      "purpose": "确认模型重训目标与勘察现状",
+      "user_prompt_original": "现在请根据我的数据集对我的项目进行模型训练",
+      "ai_output_summary": "确认训练目标：基于 data/processed 的 NASA C-MAPSS FD001 数据集重训项目模型。勘察现状：训练集 20631 行/100 单元、测试集 13096 行/100 单元（含官方口径 RUL 真值）；现有管线 train.py→随机森林+孤立森林；仅有 sklearn，torch/tensorflow/xgboost/lightgbm 均未安装。基线：RF MAE 13.55/R²0.53，IF 精确率0.43/召回0.26。",
+      "acceptance": "勘察完成，明确重训与对比两条路线。"
+    },
+    {
+      "session_no": 2,
+      "time": "2026-09-02",
+      "ai_tool": "豆包电脑端（AI Agent）",
+      "purpose": "特征工程升级实验：新增传感器趋势斜率特征",
+      "user_prompt_original": "（模型重训）优化随机森林特征工程，提升 RUL 预测精度",
+      "ai_output_summary": "对比三种特征方案：A 现有62维（15传感器×4统计）MAE13.53/R²0.536；B 62维+斜率(77维) MAE10.55/R²0.722；C 13趋势传感器+斜率 MAE10.77/R²0.707。选定方案B；加速度特征与 n_estimators 提升无增益。落地：features.py 增加 slope 算子与 _rolling_slope，feature_columns/device_feature_vector 同步更新，随机森林 n_estimators=150。",
+      "acceptance": "77 维特征落地，RF 测试集 R² 0.532→0.722、MAE 13.55→10.55；孤立森林同步升级为 77 维，精确率0.43→0.49、召回0.26→0.29；52 用例全绿，运行时预测验证通过。"
+    },
+    {
+      "session_no": 3,
+      "time": "2026-09-02",
+      "ai_tool": "豆包电脑端（AI Agent）",
+      "purpose": "补训深度学习 LSTM 时序模型（学习笔记四大核心技术之一）",
+      "user_prompt_original": "（模型重训）补齐学习笔记规划的深度学习 LSTM，与随机森林对比",
+      "ai_output_summary": "安装 PyTorch CPU 版（官方源大文件下载停滞→curl 直连 9.3MB/s 下载 wheel→清华/USTC 源解析依赖失败→改用 pypi.org 装依赖后本地 --no-deps 安装 torch 2.14.0+cpu）。编写 algorithms/lstm.py：30 周期×17 归一化特征序列→LSTM(64)→FC(32)→RUL，按设备切分验证集选最优 epoch。45 轮训练后测试集 MAE 9.02/R²0.77，优于随机森林（10.55/0.72）。新增 tests/test_lstm.py 4 个用例。",
+      "acceptance": "LSTM 训练完成并固化（lstm_rul.pt，0.09MB），深度学习对比随机森林达成'深度学习更优'结论；后端测试 52/52 全绿。"
+    },
+    {
+      "session_no": 4,
+      "time": "2026-09-02",
+      "ai_tool": "豆包电脑端（AI Agent）",
+      "purpose": "文档同步与版本提交",
+      "user_prompt_original": "（阶段6收尾）同步 readme 指标、requirements 与 prompt 追溯并提交",
+      "ai_output_summary": "readme.md 更新算法指标表（新增 LSTM 行、RF/IF 新指标）、模型文件清单、测试数 52、阶段6进度行；requirements.txt 增加 torch；创建本 prompt 记录（stage6）。",
+      "acceptance": "文档一致，等待提交推送。"
+    }
+  ]
+}
